@@ -11,12 +11,14 @@ def home():
         avg_burned_kcal = request.form.get("avg_burned_kcal")
         weight = request.form.get("weight")
         gender = request.form.get("gender")
+        training_days = request.form.get("training_days")
 
         return f"""
         kcal: {avg_kcal}<br>
-        burned: {avg_burned_kcal}<br>
-        weight: {weight}<br>
-        gender: {gender}
+        spalone: {avg_burned_kcal}<br>
+        waga: {weight}<br>
+        płeć: {gender}<br>
+        dni treningowe: {training_days}
         """
 
     return render_template("index.html")
