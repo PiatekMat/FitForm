@@ -1,0 +1,16 @@
+body{
+    display: flex; 
+    align-items: center; 
+    justify-content: center; 
+} 
+.container{ 
+    max-width: 50vw; 
+} 
+.input-group{ 
+    display: flex; 
+    flex-direction: column; 
+    margin: 5px; 
+} 
+button{ 
+    display: block; 
+}
