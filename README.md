@@ -13,8 +13,8 @@ git push Przesyła dane do neta
 
 
 Dodatkowo stwórzcie se środowisko pythona w tym folderze, tam będą sie automatycznie instalowały wszytskie bibloteki, cyli będąc w cmd z linkiem do folderu wpisujecie to:  
-python -m venv env
-Później musicie ja aktywować, czyli:
-env\Scripts\activate
-I na końcu już normalnie możecie instalować bibloteki:
+python -m venv env  
+Później musicie ja aktywować, czyli:  
+env\Scripts\activate  
+I na końcu już normalnie możecie instalować bibloteki:  
 pip install flask
