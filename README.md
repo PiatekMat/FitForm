@@ -1,5 +1,5 @@
 # FitForm
-Napisze wam tutaj najpierściej, w githubie pobeirzcie se wszyscy to: https://git-scm.com/install/windows/  
+Napisze wam tutaj najpierściej, w githubie pobeirzcie se wszyscy to: https://git-scm.com/  
 I tam w takcie pobierania ustawcie se edytor w ktr będziecie pisać kod (w moim przypadku Visual Studio Code).  
 Potem otworzy wam sie terminal i pierwsze co wpisujecie to swój login globalnie:  
 git config --global user.name "Nick"  
@@ -10,3 +10,11 @@ Dalej po wprowadzonych zmianach
 git add . dodaje wam do repo wszytskie wprowadzone przez was zmiany  
 git commit -m "Tekst" Tu sami krótko opisujecie to co wprowadziliście  
 git push Przesyła dane do neta  
+
+
+Dodatkowo stwórzcie se środowisko pythona w tym folderze, tam będą sie automatycznie instalowały wszytskie bibloteki, cyli będąc w cmd z linkiem do folderu wpisujecie to:  
+python -m venv env  
+Później musicie ja aktywować, czyli:  
+env\Scripts\activate  
+I na końcu już normalnie możecie instalować bibloteki:  
+pip install flask
