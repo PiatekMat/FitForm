@@ -1,3 +1,4 @@
 env/
 fitform_db/.env
 .venv/
+.idea/
