@@ -57,40 +57,33 @@ def get_user_mapping(engine):
 
 # E - Wczytywanie pliku .CSV z danymi badanych z pliku .ZIP
 def extract_data(zip_file):
-
     logging.info(f'---EKSTRAKCJA DANYCH Z PLIKU {zip_file}---')
-
-    # Lista wszystkich wierszy z wczytanego pliku .CSV
-    dfs = []
+    wyniki = {}
 
     try:
         with zipfile.ZipFile(zip_file, 'r') as zf:
             for file_name in zf.namelist():
                 if file_name.endswith('.csv'):
                     logging.info(f'---PRZETWARZANIE PLIKU {file_name}---')
-
                     with zf.open(file_name) as f:
                         df_part = pd.read_csv(f, sep = ',', encoding = 'utf-8-sig')
-                        dfs.append(df_part)
-
+                        wyniki[file_name] = df_part
                     logging.info(f'---POMYŚLNIE WCZYTANO {len(df_part)} WIERSZY Z PLIKU {file_name}---')
 
-        if dfs:
-            return pd.concat(dfs, ignore_index = True)
-        else:
+        if not wyniki:
             logging.warning(f'---BRAK PLIKÓW .CSV W ARCHIWUM {zip_file}---')
-            return None
 
+        return wyniki
 
     except FileNotFoundError:
         logging.error(f'---BŁĄD: BRAK PLIKU {zip_file}---')
-        return None
+        return {}
     except zipfile.BadZipFile:
-        logging.error(f'---BŁĄD: PLIKU {zip_file} JEST USZKODZONY, BĄDŹ NIEPOPRAWNY---')
-        return None
+        logging.error(f'---BŁĄD: PLIK {zip_file} JEST USZKODZONY BĄDŹ NIEPOPRAWNY---')
+        return {}
     except Exception as e:
         logging.error(f'---WYSTĄPIŁ NIEOCZEKIWANY BŁĄD PODCZAS EKSTRAKCJI: {e}---')
-        return None
+        return {}
 
 
 
@@ -242,40 +235,33 @@ def main():
     logging.info(f'---ZNALEZIONO {len(lista_plikow_zip)} PLIKÓW DO PRZETWORZENIA---')
 
     for plik in lista_plikow_zip:
-        nazwa_zip = os.path.basename(plik_zip_sciezka)
-        logging.info(f'---OTWIERANIE PACZKI ZIP: {nazwa_zip}')
+        nazwa_zip = os.path.basename(plik)
+        logging.info(f'---OTWIERANIE PACZKI ZIP: {nazwa_zip}---')
 
         try:
-            with zipfile.ZipFile(plik_zip, 'r') as z:
+            pliki_csv = extract_data(plik)
 
-                for nazwa_csv in z.namelist():
-                    if nazwa_csv.endswith('.csv'):
-                        try:
-                            id_z_pliku = int(nazwa_csv.split('_')[0])
+            for nazwa_csv, dane_df in pliki_csv.items():
+                try:
+                    id_z_pliku = int(nazwa_csv.split('_')[0])
 
-                            if id_z_pliku not in user_mapping:
-                                logging.error('---BŁĄD: NIE MA TAKIEGO UŻYTKOWNIKA W BAZIE')
-                                sys.exit(1)
+                    if id_z_pliku not in user_mapping:
+                        logging.error(f'---BŁĄD: NIE MA UŻYTKOWNIKA O ID {id_z_pliku} W BAZIE---')
+                        continue
 
-                            if id_z_pliku in user_mapping:
-                                imie_z_bazy = user_mapping[id_z_pliku]
-                                logging.info(f'---PRZETWARZANIE: {nazwa_csv} (USER: {imie_z_bazy}, ID: {id_z_pliku})---')
+                    imie_z_bazy = user_mapping[id_z_pliku]
+                    logging.info(f'---PRZETWARZANIE: {nazwa_csv} (USER: {imie_z_bazy}, ID: {id_z_pliku})---')
 
-                                with z.open(nazwa_csv) as f:
-                                    dane_df = pd.read_csv(f)
+                    czysty_df = transform_data(dane_df, user_id = id_z_pliku)
 
-                                czysty_df = transform_data(dane_df, user_id = id_z_pliku)
+                    if czysty_df is not None:
+                        load_data(czysty_df, docelowa_tabela, engine)
 
-                                if czysty_df is not None:
-                                    load_data(czysty_df, docelowa_tabela, engine)
-
-                        except (ValueError, IndexError):
-                            logging.warning(f"---POMINIĘTO: {nazwa_csv} (BRAK ID W NAZWIE)---")
-
+                except (ValueError, IndexError):
+                    logging.warning(f"---POMINIĘTO: {nazwa_csv} (BRAK ID W NAZWIE)---")
 
             sciezka_docelowa = os.path.join(katalog_archiwum, nazwa_zip)
-            shutil.move(plik_zip_sciezka, sciezka_docelowa)
-            logging.info(f'---ZARCHIWIZOWANO CAŁĄ PACZKĘ: {nazwa_zip}---')
+            shutil.move(plik, sciezka_docelowa)
 
 
         except Exception as e:
