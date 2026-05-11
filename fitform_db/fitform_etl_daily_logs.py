@@ -76,7 +76,7 @@ def extract_data(zip_file):
                     logging.info(f'---POMYŚLNIE WCZYTANO {len(df_part)} WIERSZY Z PLIKU {file_name}---')
 
         if dfs:
-            return pd.concat(dfs, ignore_index=True)
+            return pd.concat(dfs, ignore_index = True)
         else:
             logging.warning(f'---BRAK PLIKÓW .CSV W ARCHIWUM {zip_file}---')
             return None
@@ -100,7 +100,7 @@ def transform_data(df, user_id):
 
     logging.info('---ROZPOCZĘCIE TRANSFORMACJI DANYCH---')
 
-    # Upewnienie się czy ekstrakcja danych na pewno coś zwróciła
+    # Upewnienie się, czy ekstrakcja danych na pewno coś zwróciła
     if df is None or df.empty:
         logging.warning('---BRAK DANYCH DO TRANSFORMACJI, PRZERYWANIE OPERACJI---')
         return None
@@ -121,7 +121,7 @@ def transform_data(df, user_id):
             'Waga na czczo': 'waga_czczo',
             'Płeć': 'plec'
         }
-        df.rename(columns=column_mapping, inplace=True)
+        df.rename(columns = column_mapping, inplace = True)
 
         # Przypisanie ID użytkownika
         df['user_id'] = user_id
@@ -156,7 +156,7 @@ def transform_data(df, user_id):
             df = df[df['waga_czczo'].isna() | df['waga_czczo'].between(30, 635)]
 
         # 5. Zabezpieczenie Compound Key
-        df.dropna(subset = ['data_wpisu'], inplace=True)
+        df.dropna(subset = ['data_wpisu'], inplace = True)
         df.drop_duplicates(subset = ['user_id', 'data_wpisu'], keep = 'last', inplace = True)
         df = df.replace({np.nan: None})
 
@@ -196,13 +196,13 @@ def load_data(df, table_name, engine):
         df.to_sql(
             name = table_name,
             con = engine,
-            if_exists = 'append',  # Dodanie do intniejącej tabeli
+            if_exists = 'append',  # Dodanie do istniejącej tabeli
             index = False,  # Upewnienie się o braku wgrywania wewnętrznego indeksu Pandasa (0, 1, 2...)
             method = insert_on_conflict  # Użycie funkcji UPSERT
         )
 
         rows_imported = len(df)
-        logging.info(f'---SUKCES! WCZYTANO, BĄDŹ ZAAKTUALIZOWANO {rows_imported} WIERSZY W TABELI "{table_name}"---')
+        logging.info(f'---SUKCES! WCZYTANO, BĄDŹ ZAKTUALIZOWANO {rows_imported} WIERSZY W TABELI "{table_name}"---')
         return True
 
 
@@ -242,31 +242,44 @@ def main():
     logging.info(f'---ZNALEZIONO {len(lista_plikow_zip)} PLIKÓW DO PRZETWORZENIA---')
 
     for plik in lista_plikow_zip:
-        nazwa_bazowa = os.path.basename(plik)
+        nazwa_zip = os.path.basename(plik_zip_sciezka)
+        logging.info(f'---OTWIERANIE PACZKI ZIP: {nazwa_zip}')
 
         try:
-            id_z_pliku = int(nazwa_bazowa.split('_')[0])
+            with zipfile.ZipFile(plik_zip, 'r') as z:
 
-            if id_z_pliku in user_mapping:
-                imie_z_bazy = user_mapping[id_z_pliku]
-                logging.info(
-                    f'---PRZETWARZANIE PLIKU: {nazwa_bazowa} (ROZPOZNANO UŻYTKOWNIKA: {imie_z_bazy}, ID: {id_z_pliku})---')
+                for nazwa_csv in z.namelist():
+                    if nazwa_csv.endswith('.csv'):
+                        try:
+                            id_z_pliku = int(nazwa_csv.split('_')[0])
 
-                dane_df = extract_data(plik)
-                if dane_df is not None:
-                    czysty_df = transform_data(dane_df, user_id=id_z_pliku)
-                    if czysty_df is not None:
-                        sukces = load_data(czysty_df, docelowa_tabela, engine)
+                            if id_z_pliku not in user_mapping:
+                                logging.error('---BŁĄD: NIE MA TAKIEGO UŻYTKOWNIKA W BAZIE')
+                                sys.exit(1)
 
-                        if sukces:
-                            sciezka_docelowa = os.path.join(katalog_archiwum, nazwa_bazowa)
-                            shutil.move(plik, sciezka_docelowa)
-                            logging.info(f'---ZARCHIWIZOWANO PLIK: {nazwa_bazowa}---')
-            else:
-                logging.warning(f'---POMINIĘTO: {nazwa_bazowa}. ID {id_z_pliku} NIE ISTNIEJE W BAZIE---')
+                            if id_z_pliku in user_mapping:
+                                imie_z_bazy = user_mapping[id_z_pliku]
+                                logging.info(f'---PRZETWARZANIE: {nazwa_csv} (USER: {imie_z_bazy}, ID: {id_z_pliku})---')
 
-        except ValueError:
-            logging.error(f'---BŁĄD NAZWY PLIKU: {nazwa_bazowa}. NAZWA MUSI ZACZYNAĆ SIĘ OD ID (NP. 1_PLIK.ZIP)!---')
+                                with z.open(nazwa_csv) as f:
+                                    dane_df = pd.read_csv(f)
+
+                                czysty_df = transform_data(dane_df, user_id = id_z_pliku)
+
+                                if czysty_df is not None:
+                                    load_data(czysty_df, docelowa_tabela, engine)
+
+                        except (ValueError, IndexError):
+                            logging.warning(f"---POMINIĘTO: {nazwa_csv} (BRAK ID W NAZWIE)---")
+
+
+            sciezka_docelowa = os.path.join(katalog_archiwum, nazwa_zip)
+            shutil.move(plik_zip_sciezka, sciezka_docelowa)
+            logging.info(f'---ZARCHIWIZOWANO CAŁĄ PACZKĘ: {nazwa_zip}---')
+
+
+        except Exception as e:
+            logging.error(f"---BŁĄD PODCZAS PRZETWARZANIA PACZKI {nazwa_zip}: {e}---")
 
     logging.info('---ZAKOŃCZONO PROCES ETL---')
 
