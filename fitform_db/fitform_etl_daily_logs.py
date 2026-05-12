@@ -24,8 +24,9 @@ load_dotenv()
 # Konfiguracja logger'a
 LOG_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'daily_logs_etl.log')
 logging.basicConfig(
-                    filename = LOG_PATH,
+
                     filemode = 'a',
+                    encoding = 'utf-8',
                     level = logging.INFO,
                     format = '%(asctime)s - %(name)s - %(levelname)s - %(message)s',
                     datefmt = "%Y-%m-%d %H:%M",
