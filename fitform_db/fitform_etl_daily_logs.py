@@ -217,6 +217,7 @@ def main():
         logging.error('---BŁĄD: BRAK ZMIENNEJ ŚRODOWISKOWEJ FITFORM_DB_URL. SPRAWDŹ PLIK .ENV---')
         sys.exit(1)
 
+    # Zrobienie połączenia z bazą danych z URL
     engine = create_engine(db_url)
 
     user_mapping = get_user_mapping(engine)
@@ -226,10 +227,12 @@ def main():
 
     docelowa_tabela = 'daily_logs'
 
+    # Archiwizacja plików dodanych do bazy danych
     katalog_danych = 'dane_uzytkownikow'
     katalog_archiwum = os.path.join(katalog_danych, 'archiwum')
     os.makedirs(katalog_archiwum, exist_ok = True)
 
+    # Otwieranie plików CSV i wywołanie funkcji 'extract_data'
     sciezka_do_plikow = os.path.join(katalog_danych, '*.zip')
     lista_plikow_zip = glob.glob(sciezka_do_plikow)
 
@@ -268,6 +271,7 @@ def main():
         except Exception as e:
             logging.error(f"---BŁĄD PODCZAS PRZETWARZANIA PACZKI {nazwa_zip}: {e}---")
 
+    # Sukces, pomyślny koniec procesu
     logging.info('---ZAKOŃCZONO PROCES ETL---')
 
     engine.dispose()
