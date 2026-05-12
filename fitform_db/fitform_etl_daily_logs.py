@@ -21,7 +21,7 @@ load_dotenv()
 
 
 
-# Konfiguracja logger'a
+# Konfiguracja logger
 LOG_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'daily_logs_etl.log')
 logging.basicConfig(
 
@@ -280,5 +280,8 @@ def main():
 
 
 
+# Blokada samodzielnego uruchomienia skryptu, co mogłoby zepsuć wczytywanie danych do bazy
 if __name__ == '__main__':
-    main()
+    print("!!! Tego skryptu nie należy uruchamiać samodzielnie !!!")
+    print("!!! Aby uruchomić proces ETL, użyj pliku: 'run_pipeline.py' !!!")
+    sys.exit(1)
