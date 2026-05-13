@@ -21,10 +21,10 @@ load_dotenv()
 
 
 
-# Konfiguracja logger
+# Konfiguracja logger'a
 LOG_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'daily_logs_etl.log')
 logging.basicConfig(
-
+                    filename = LOG_PATH,
                     filemode = 'a',
                     encoding = 'utf-8',
                     level = logging.INFO,
@@ -37,7 +37,7 @@ logging.basicConfig(
 
 # Pobieranie numeru ID użytkowników z bazy danych
 def get_user_mapping(engine):
-    logging.info('---POBIERANIE LISTY UŻYTKOWNIKÓW Z BAZY---')
+    logging.info('---POBIERANIE LISTY UŻYTKOWNIKÓW Z BAZY DLA "DAILY_LOGS"---')
 
     try:
         query = "SELECT user_id, name FROM users;"
@@ -65,11 +65,11 @@ def extract_data(zip_file):
         with zipfile.ZipFile(zip_file, 'r') as zf:
             for file_name in zf.namelist():
                 if file_name.endswith('.csv'):
-                    logging.info(f'---PRZETWARZANIE PLIKU {file_name}---')
+                    logging.info(f'---PRZETWARZANIE PLIKU {file_name} DLA "DAILY_LOGS"---')
                     with zf.open(file_name) as f:
                         df_part = pd.read_csv(f, sep = ',', encoding = 'utf-8-sig')
                         wyniki[file_name] = df_part
-                    logging.info(f'---POMYŚLNIE WCZYTANO {len(df_part)} WIERSZY Z PLIKU {file_name}---')
+                    logging.info(f'---POMYŚLNIE WCZYTANO {len(df_part)} WIERSZY Z PLIKU {file_name}"---')
 
         if not wyniki:
             logging.warning(f'---BRAK PLIKÓW .CSV W ARCHIWUM {zip_file}---')
@@ -92,11 +92,11 @@ def extract_data(zip_file):
 # T - Transformacja surowych danych przy użyciu Pandas i NumPy
 def transform_data(df, user_id):
 
-    logging.info('---ROZPOCZĘCIE TRANSFORMACJI DANYCH---')
+    logging.info('---ROZPOCZĘCIE TRANSFORMACJI DANYCH DLA "DAILY_LOGS"---')
 
     # Upewnienie się, czy ekstrakcja danych na pewno coś zwróciła
     if df is None or df.empty:
-        logging.warning('---BRAK DANYCH DO TRANSFORMACJI, PRZERYWANIE OPERACJI---')
+        logging.warning('---BRAK DANYCH DO TRANSFORMACJI, PRZERYWANIE OPERACJI"---')
         return None
 
     try:
@@ -154,7 +154,8 @@ def transform_data(df, user_id):
         df.drop_duplicates(subset = ['user_id', 'data_wpisu'], keep = 'last', inplace = True)
         df = df.replace({np.nan: None})
 
-        logging.info(f'---TRANSFORMACJA ZAKOŃCZONA SUKCESEM. LICZBA GOTOWYCH WIERSZY: {df.shape[0]}---')
+        logging.info(f'---TRANSFORMACJA DLA "DAILY_LOGS" ZAKOŃCZONA SUKCESEM.'
+                     f' LICZBA GOTOWYCH WIERSZY: {df.shape[0]}---')
 
         return df
 
@@ -168,7 +169,7 @@ def transform_data(df, user_id):
 # L - Wczytanie danych do bazy danych 'FitForm' w chmurze
 def load_data(df, table_name, engine):
 
-    logging.info('---WCZYTYWANIE DANYCH DO BAZY---')
+    logging.info('---WCZYTYWANIE DANYCH DLA "DAILY_LOGS" DO BAZY---')
 
     if df is None or df.empty:
         logging.warning('---BRAK DANYCH DO WCZYTANIA DO BAZY, PRZERYWANIE OPERACJI---')
@@ -196,7 +197,8 @@ def load_data(df, table_name, engine):
         )
 
         rows_imported = len(df)
-        logging.info(f'---SUKCES! WCZYTANO, BĄDŹ ZAKTUALIZOWANO {rows_imported} WIERSZY W TABELI "{table_name}"---')
+        logging.info(f'---SUKCES! WCZYTANO, BĄDŹ ZAKTUALIZOWANO'
+                     f' {rows_imported} WIERSZY W TABELI "{table_name}" DLA "DAILY_LOGS"---')
         return True
 
 
@@ -209,7 +211,7 @@ def load_data(df, table_name, engine):
 
 
 def main():
-    logging.info('---START PROCESU ETL---')
+    logging.info('---START PROCESU ETL DLA "DAILY_LOGS"---')
 
     # Pobranie adresu z pliku .env
     db_url = os.getenv('FITFORM_DB_URL')
@@ -222,7 +224,7 @@ def main():
 
     user_mapping = get_user_mapping(engine)
     if not user_mapping:
-        logging.error('---SŁOWNIK PUSTY. PRZERYWANIE ETL---')
+        logging.error('---SŁOWNIK PUSTY. PRZERYWANIE PROCESU---')
         sys.exit(1)
 
     docelowa_tabela = 'daily_logs'
@@ -272,7 +274,7 @@ def main():
             logging.error(f"---BŁĄD PODCZAS PRZETWARZANIA PACZKI {nazwa_zip}: {e}---")
 
     # Sukces, pomyślny koniec procesu
-    logging.info('---ZAKOŃCZONO PROCES ETL---')
+    logging.info('---ZAKOŃCZONO PROCES ETL "DAILY_LOGS"---')
 
     engine.dispose()
     logging.info('---ZAMKNIĘTO POŁĄCZENIE Z BAZĄ---')
