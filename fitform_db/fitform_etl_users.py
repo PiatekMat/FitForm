@@ -42,7 +42,7 @@ def extract_data(zip_file):
         with zipfile.ZipFile(zip_file, 'r') as zf:
             for file_name in zf.namelist():
                 if file_name.endswith('.csv'):
-                    logging.info(f'---PRZETWARZANIE PLIKU {file_name}---')
+                    logging.info(f'---PRZETWARZANIE PLIKU {file_name} DLA "USERS"---')
                     with zf.open(file_name) as f:
                         df_part = pd.read_csv(f, sep = ',', encoding = 'utf-8-sig')
                         wyniki[file_name] = df_part
@@ -69,7 +69,7 @@ def extract_data(zip_file):
 # T - Transformacja surowych danych przy użyciu Pandas i NumPy
 def transform_data(df, user_id):
 
-    logging.info('---ROZPOCZĘCIE TRANSFORMACJI DANYCH---')
+    logging.info('---ROZPOCZĘCIE TRANSFORMACJI DANYCH DLA "USERS"---')
 
     # Upewnienie się, czy ekstrakcja danych na pewno coś zwróciła
     if df is None or df.empty:
@@ -117,7 +117,8 @@ def transform_data(df, user_id):
             'plec': [plec]
         })
 
-        logging.info(f'---TRANSFORMACJA ZAKOŃCZONA SUKCESEM. LICZBA GOTOWYCH WIERSZY: {df.shape[0]}---')
+        logging.info(f'---TRANSFORMACJA DLA "USERS" ZAKOŃCZONA SUKCESEM.'
+                     f' LICZBA GOTOWYCH WIERSZY: {df.shape[0]}---')
 
         return df
 
@@ -131,7 +132,7 @@ def transform_data(df, user_id):
 # L - Wczytanie danych do bazy danych 'FitForm' w chmurze
 def load_data(df, table_name, engine):
 
-    logging.info('---WCZYTYWANIE DANYCH DO BAZY---')
+    logging.info('---WCZYTYWANIE DANYCH DLA "USERS" DO BAZY---')
 
     if df is None or df.empty:
         logging.warning('---BRAK DANYCH DO WCZYTANIA DO BAZY, PRZERYWANIE OPERACJI---')
@@ -159,7 +160,8 @@ def load_data(df, table_name, engine):
         )
 
         rows_imported = len(df)
-        logging.info(f'---SUKCES! WCZYTANO, BĄDŹ ZAKTUALIZOWANO {rows_imported} WIERSZY W TABELI "{table_name}"---')
+        logging.info(f'---SUKCES! WCZYTANO, BĄDŹ ZAKTUALIZOWANO'
+                     f' {rows_imported} WIERSZY W TABELI "{table_name}" DLA "USERS"---')
         return True
 
     except Exception as e:
@@ -170,7 +172,7 @@ def load_data(df, table_name, engine):
 
 
 def main():
-    logging.info('---START PROCESU ETL---')
+    logging.info('---START PROCESU ETL DLA "USERS"---')
 
     # Pobranie adresu z pliku .env
     db_url = os.getenv('FITFORM_DB_URL')
@@ -214,7 +216,7 @@ def main():
             logging.error(f"---BŁĄD PODCZAS PRZETWARZANIA PACZKI {nazwa_zip}: {e}---")
 
     # Sukces, pomyślny koniec procesu
-    logging.info('---ZAKOŃCZONO PROCES ETL---')
+    logging.info('---ZAKOŃCZONO PROCES ETL DLA "USERS"---')
 
     engine.dispose()
     logging.info('---ZAMKNIĘTO POŁĄCZENIE Z BAZĄ---')
