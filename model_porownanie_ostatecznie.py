@@ -445,8 +445,8 @@ try:
     # generowanie wykresu
     plt.figure(figsize=(10, 6))
     plt.barh(cechy_sortowane, waznosc_sortowana, color='#008080', edgecolor='black', alpha=0.8)
-    plt.xlabel("Spadek dokładności modelu (Wzrost błędu po przetasowaniu cechy)", fontsize=11)
-    plt.title("Globalna ważność cech: Permutation Feature Importance (PFI)\nModel: LightGBM", fontsize=13,
+    plt.xlabel("Spadek dokładności modelu", fontsize=11)
+    plt.title("PFI (Permutation Feature Importance)\nModel: LightGBM", fontsize=13,
               fontweight='bold', pad=15)
     plt.grid(True, linestyle=':', alpha=0.6, axis='x')
 
