@@ -141,6 +141,7 @@ def transform_data(df, user_id):
             if column in df.columns:
                 df[column] = df[column].astype(str).str.replace(' ', '').str.replace(',', '.')
                 df[column] = pd.to_numeric(df[column], errors='coerce')
+                df[column] = df[column].str.replace(r'[^\d.]', '', regex = True)
 
         cols_to_zero = ['zjedzone_kcal', 'spalone_kcal', 'cardio_min', 'kroki', 'bialko_g']
         for column in cols_to_zero:
