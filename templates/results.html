@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <title>Wynik</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+<div class="container">
+    <h1>Wynik predykcji</h1>
+
+    <h2>
+        Przewidywana masa po {{ days }} dniach
+    </h2>
+
+    <div class="result-box">
+        <h1>
+            {{ prediction }} kg
+        </h1>
+    </div>
+
+    <table>
+        <thead>
+        <tr>
+            <th>Dzień</th>
+            <th>Przewidywana masa</th>
+        </tr>
+        </thead>
+        <tbody>
+        {% for weight in weights %}
+        <tr>
+            <td>
+                {{ loop.index0 }}
+            </td>
+            <td>
+                {{ weight }} kg
+            </td>
+        </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+    <br>
+    <img src="{{ url_for('static', filename=plot) }}"
+         alt="Wykres">
+
+    <br><br>
+    <a href="/">
+        <button>
+            Nowa predykcja
+        </button>
+    </a>
+</div>
+</body>
+</html>
