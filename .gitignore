@@ -9,6 +9,7 @@ __pycache__/
 .Python
 *.egg
 *.egg-info/
+*.log
 logs/
 dist/
 build/

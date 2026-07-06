@@ -20,7 +20,7 @@ load_dotenv()
 
 
 # Konfiguracja logger'a
-LOG_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'users_etl.log')
+LOG_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'dane_uzytkownikow/users_etl.log')
 
 logger = logging.getLogger('users_etl')
 logger.setLevel(logging.INFO)

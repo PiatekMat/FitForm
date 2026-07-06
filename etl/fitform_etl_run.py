@@ -1,5 +1,5 @@
 import fitform_etl_users
-import fitform_etl_daily_logs
+from etl import fitform_etl_daily_logs
 import sys
 
 
