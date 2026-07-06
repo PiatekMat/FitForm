@@ -1,9 +1,0 @@
-<changelist name="Uncommitted_changes_before_Checkout_at_06_07_2026_21_24_[Changes]1" date="1783365863492" recycled="true" deleted="true">
-  <option name="PATH" value="$PROJECT_DIR$/.idea/shelf/Uncommitted_changes_before_Checkout_at_06_07_2026_21_24_[Changes]1/shelved.patch" />
-  <option name="DESCRIPTION" value="Uncommitted changes before Checkout at 06.07.2026 21:24 [Changes]" />
-  <binary>
-    <option name="BEFORE_PATH" value="fitform_db/dane_uzytkownikow/archiwum/test_potoku.zip" />
-    <option name="AFTER_PATH" value="etl/dane_uzytkownikow/archiwum/test_potoku.zip" />
-    <option name="SHELVED_PATH" value="$PROJECT_DIR$/.idea/shelf/Uncommitted_changes_before_Checkout_at_06_07_2026_21_24_[Changes]1/test_potoku.zip" />
-  </binary>
-</changelist>
