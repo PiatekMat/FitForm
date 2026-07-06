@@ -10,6 +10,7 @@ __pycache__/
 *.egg
 *.egg-info/
 *.log
+etl/dane_uzytkownikow/
 logs/
 dist/
 build/
