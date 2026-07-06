@@ -25,16 +25,3 @@ venv/
 env/
 ENV/
 .env
-
-# IDE
-.idea/
-.vscode/
-*.swp
-*.swo
-.DS_Store
-Thumbs.db
-
-# Tests
-.pytest_cache/
-.coverage
-htmlcov/
