@@ -1,3 +1,27 @@
+# Generated data
+data/
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+*.egg
+*.egg-info/
+logs/
+dist/
+build/
+eggs/
+parts/
+var/
+sdist/
+wheels/
+*.spec
+
+# Virtual spaces
+.venv/
+venv/
 env/
+ENV/
 .env
-PC/

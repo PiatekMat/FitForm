@@ -1,0 +1,52 @@
+Index: .gitignore
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+># Generated data\r\ndata/\r\n\r\n# Python\r\n__pycache__/\r\n*.py[cod]\r\n*.pyo\r\n*.pyd\r\n.Python\r\n*.egg\r\n*.egg-info/\r\nlogs/\r\ndist/\r\nbuild/\r\neggs/\r\nparts/\r\nvar/\r\nsdist/\r\nwheels/\r\n*.spec\r\n\r\n# Virtual spaces\r\n.venv/\r\nvenv/\r\nenv/\r\nENV/\r\n.env\r\n\r\n# IDE\r\n.idea/\r\n.vscode/\r\n*.swp\r\n*.swo\r\n.DS_Store\r\nThumbs.db\r\n\r\n# Tests\r\n.pytest_cache/\r\n.coverage\r\nhtmlcov/
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/.gitignore b/.gitignore
+--- a/.gitignore	(revision 32291dbfc11478824d65e49957ff4268e6ca6dd2)
++++ b/.gitignore	(date 1783366218941)
+@@ -1,40 +1,3 @@
+-# Generated data
+-data/
+-
+-# Python
+-__pycache__/
+-*.py[cod]
+-*.pyo
+-*.pyd
+-.Python
+-*.egg
+-*.egg-info/
+-logs/
+-dist/
+-build/
+-eggs/
+-parts/
+-var/
+-sdist/
+-wheels/
+-*.spec
+-
+-# Virtual spaces
+-.venv/
+-venv/
+ env/
+-ENV/
+ .env
+ 
+-# IDE
+-.idea/
+-.vscode/
+-*.swp
+-*.swo
+-.DS_Store
+-Thumbs.db
+-
+-# Tests
+-.pytest_cache/
+-.coverage
+-htmlcov/
+\ No newline at end of file
