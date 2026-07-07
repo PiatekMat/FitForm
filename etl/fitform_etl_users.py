@@ -20,14 +20,14 @@ load_dotenv()
 
 
 # Konfiguracja logger'a
-LOG_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'dane_uzytkownikow/users_etl.log')
+LOG_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'users_etl.log')
 
 logger = logging.getLogger('users_etl')
 logger.setLevel(logging.INFO)
 
 # Zabezpieczenie przed dublowaniem wpisów
 if not logger.handlers:
-    file_handler = logging.FileHandler(LOG_PATH, mode = 'a', encoding = 'utf-8')
+    file_handler = logging.FileHandler(LOG_PATH, mode = 'a', encoding = 'windows-1250')
     formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s', datefmt = "%Y-%m-%d %H:%M")
     file_handler.setFormatter(formatter)
     logger.addHandler(file_handler)
@@ -46,7 +46,7 @@ def extract_data(zip_file):
                 if file_name.endswith('.csv'):
                     logging.info(f'---PRZETWARZANIE PLIKU {file_name} DLA "USERS"---')
                     with zf.open(file_name) as f:
-                        df_part = pd.read_csv(f, sep = ',', encoding = 'utf-8-sig')
+                        df_part = pd.read_csv(f, sep = ';', encoding = 'windows-1250')
                         wyniki[file_name] = df_part
                     logging.info(f'---POMYŚLNIE WCZYTANO {len(df_part)} WIERSZY Z PLIKU {file_name}---')
 

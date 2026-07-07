@@ -29,7 +29,7 @@ logger.setLevel(logging.INFO)
 
 # Zabezpieczenie przed dublowaniem wpisów
 if not logger.handlers:
-    file_handler = logging.FileHandler(LOG_PATH, mode = 'a', encoding = 'utf-8')
+    file_handler = logging.FileHandler(LOG_PATH, mode = 'a', encoding = 'windows-1250')
     formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s', datefmt = "%Y-%m-%d %H:%M")
     file_handler.setFormatter(formatter)
     logger.addHandler(file_handler)
@@ -69,7 +69,7 @@ def extract_data(zip_file):
                 if file_name.endswith('.csv'):
                     logging.info(f'---PRZETWARZANIE PLIKU {file_name} DLA "DAILY_LOGS"---')
                     with zf.open(file_name) as f:
-                        df_part = pd.read_csv(f, sep = ',', encoding = 'utf-8-sig')
+                        df_part = pd.read_csv(f, sep = ';', encoding = 'windows-1250')
                         wyniki[file_name] = df_part
                     logging.info(f'---POMYŚLNIE WCZYTANO {len(df_part)} WIERSZY Z PLIKU {file_name}"---')
 
@@ -129,7 +129,21 @@ def transform_data(df, user_id):
 
         # Konwersja i czyszczenie danych
         # 1. Ustawienie daty wpisu do oczekiwanego zapisu
-        df['data_wpisu'] = pd.to_datetime(df['data_wpisu'], format = 'mixed', errors = 'coerce').dt.date
+        if 'data_wpisu' in df.columns:
+            # Słownik tłumaczący "03.mar" -> "03-Mar"
+            pl_to_en_months = {
+                '.sty': '-Jan', '.lut': '-Feb', '.mar': '-Mar', '.kwi': '-Apr',
+                '.maj': '-May', '.cze': '-Jun', '.lip': '-Jul', '.sie': '-Aug',
+                '.wrz': '-Sep', '.paź': '-Oct', '.paz': '-Oct', '.lis': '-Nov', '.gru': '-Dec'
+            }
+
+            # Zamiana w pandas (wymaga rzutowania na małe litery, żeby dopasować klucze)
+            df['data_wpisu'] = df['data_wpisu'].astype(str).str.lower()
+            df['data_wpisu'] = df['data_wpisu'].replace(pl_to_en_months, regex=True)
+
+            df['data_wpisu'] = df['data_wpisu'].apply(lambda x: f"{x}-2026" if len(str(x)) < 7 else x)
+
+        df['data_wpisu'] = pd.to_datetime(df['data_wpisu'], format='mixed', errors='coerce').dt.strftime('%Y-%m-%d')
 
         # 2. Zamiana str na int w kolumnie 'trening_silowy'
         if 'trening_silowy' in df.columns:
@@ -139,14 +153,9 @@ def transform_data(df, user_id):
         numeric_columns = ['zjedzone_kcal', 'bialko_g', 'spalone_kcal', 'cardio_min', 'kroki', 'waga_czczo']
         for column in numeric_columns:
             if column in df.columns:
-                df[column] = df[column].astype(str).str.replace(' ', '').str.replace(',', '.')
+                # Najpierw operacje na stringu (spacje, zamiana przecinków, wyrzucenie śmieci), potem rzutowanie na float
+                df[column] = df[column].astype(str).str.replace(' ', '').str.replace(',', '.').str.replace(r'[^\d.]', '',regex=True)
                 df[column] = pd.to_numeric(df[column], errors='coerce')
-                df[column] = df[column].str.replace(r'[^\d.]', '', regex = True)
-
-        cols_to_zero = ['zjedzone_kcal', 'spalone_kcal', 'cardio_min', 'kroki', 'bialko_g']
-        for column in cols_to_zero:
-            if column in df.columns:
-                df[column] = df[column].fillna(0)
 
         # 4. Walidacja zakresu wagi
         if 'waga_czczo' in df.columns:
@@ -156,6 +165,14 @@ def transform_data(df, user_id):
         df.dropna(subset = ['data_wpisu'], inplace = True)
         df.drop_duplicates(subset = ['user_id', 'data_wpisu'], keep = 'last', inplace = True)
         df = df.replace({np.nan: None})
+
+        # 6. Oczyszczenie przed załadowaniem (usunięcie kolumn 'Unnamed' oraz innych śmieci)
+        docelowe_kolumny = [
+            'data_wpisu', 'zjedzone_kcal', 'bialko_g', 'spalone_kcal',
+            'cardio_min', 'trening_silowy', 'kroki', 'waga_czczo', 'user_id'
+        ]
+
+        df = df[[col for col in docelowe_kolumny if col in df.columns]]
 
         logging.info(f'---TRANSFORMACJA DLA "DAILY_LOGS" ZAKOŃCZONA SUKCESEM.'
                      f' LICZBA GOTOWYCH WIERSZY: {df.shape[0]}---')
