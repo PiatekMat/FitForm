@@ -1,5 +1,6 @@
 # Generated data
 *.csv
+*.zip
 
 # Python
 __pycache__/
