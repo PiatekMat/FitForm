@@ -22,7 +22,6 @@ def generuj_baze(liczba_osob=100, dni_na_osobe=77):
     all_logs = []
 
     for i in range(liczba_osob):
-        user_id = 100 + i
         plec = random.choice(['M', 'K'])
         typ_profilu = random.choice(list(PROFILE.keys()))
         cfg = PROFILE[typ_profilu]
@@ -60,7 +59,6 @@ def generuj_baze(liczba_osob=100, dni_na_osobe=77):
             delta_tluszcz = bilans / 7700
 
             all_logs.append({
-                'user_id': int(user_id),
                 'data_wpisu': data_wpisu.strftime('%Y-%m-%d'),
                 'zjedzone_kcal': int(zjedzone_kcal),
                 'bialko_g': float(bialko),
@@ -76,7 +74,7 @@ def generuj_baze(liczba_osob=100, dni_na_osobe=77):
     df_fake = pd.DataFrame(all_logs)
 
     kolejnosc_kolumn = [
-        'user_id', 'data_wpisu', 'zjedzone_kcal', 'bialko_g',
+        'data_wpisu', 'zjedzone_kcal', 'bialko_g',
         'spalone_kcal', 'cardio_min', 'trening_silowy', 'kroki', 'waga_czczo'
     ]
     return df_fake[kolejnosc_kolumn]
