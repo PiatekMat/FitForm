@@ -1,6 +1,5 @@
 import random
 import pandas as pd
-from faker import Faker
 import numpy as np
 import xgboost as xgb
 import lightgbm as lgb
@@ -29,25 +28,42 @@ logging.basicConfig(
     ]
 )
 
-load_dotenv()
-db_url = os.getenv("FITFORM_DB_URL")
+# --------- Połączenie z lokalnym MySQL (XAMPP) ---------
 
 try:
-    logging.info("Tworzenie połączenia SQLAlchemy z Supabase za pomocą FITFORM_DB_URL")
+    logging.info("Łączenie z lokalną bazą MySQL...")
 
-    if not db_url:
-        raise ValueError("Nie znaleziono zmiennej FITFORM_DB_URL w pliku .env!")
+    engine = create_engine(
+        "mysql+pymysql://root:@localhost/fitform"
+    )
 
-    engine = create_engine(db_url)
-    nazwa_tabeli = "daily_logs"
-    query = f"SELECT * FROM {nazwa_tabeli};"
+    query = """
+    SELECT
+    dl.*,
+    CASE
+        WHEN u.plec = 'M' THEN 1
+        ELSE 0
+    END AS plec
+    FROM daily_logs dl
+    JOIN users u
+    ON dl.user_id = u.user_id;
+    """
 
     df = pd.read_sql_query(query, engine)
-    logging.info(f"Pobrano {len(df)} rekordów.")
+
+    logging.info(f"Pobrano {len(df)} rekordów z lokalnej bazy MySQL.")
 
 except Exception as error:
-    logging.error(f"Błąd połączenia: {error}")
+    logging.error(f"Błąd połączenia z MySQL: {error}")
     exit()
+
+df["waga_czczo"] = df["waga_czczo"].replace(0, np.nan)
+
+df["waga_czczo"] = (
+    df.groupby("user_id")["waga_czczo"]
+      .ffill()
+      .bfill()
+)
 
 os.makedirs("static", exist_ok=True)
 
@@ -133,44 +149,43 @@ kolumny_do_usuniecia = ['data_wpisu', 'waga_czczo', 'waga_jutro', 'data_nastepna
 X_surowe = df_clean.drop(kolumny_do_usuniecia, axis=1, errors='ignore')
 y_surowe = df_clean['roznica_wagi']
 
+print(df_clean[df_clean["user_id"] == 1].isna().sum())
+
 # usunięto wiersze z brakami danych (NaN) przed podziałem (tutaj zostaja usuniete wiersze z brakami innymi niz waga_czczo)
 czyste_indeksy = X_surowe.dropna().index.intersection(y_surowe.dropna().index)
 X_pelne = X_surowe.loc[czyste_indeksy].copy()
 y_pelne = y_surowe.loc[czyste_indeksy]
 
-# pobrano listę wszystkich unikalnych ID użytkowników w bazie
-wszyscy_uzytkownicy = df_clean.loc[czyste_indeksy, 'user_id'].unique().tolist()
+# ======================================
+# PODZIAŁ TRENING / TEST
+# Wymuszamy, że user_id = 1 jest TYLKO w teście
+# ======================================
 
-# filtracja użytkowników z zakresu 1-5, którzy faktycznie istnieją w bazie
-kandydaci_1_5 = [uid for uid in wszyscy_uzytkownicy if uid in [1, 2, 3, 4, 5]]
+print("Użytkownicy w df:", sorted(df["user_id"].unique()))
+print("Użytkownicy w df_clean:", sorted(df_clean["user_id"].unique()))
+print("Użytkownicy po czystych indeksach:",
+      sorted(df_clean.loc[czyste_indeksy, "user_id"].unique()))
 
-# losowanie 1 uzytkownika z user_id od 1 do 5
-random.seed(42)
-if kandydaci_1_5:
-    uzytkownik_testowy_wymuszony = random.choice(kandydaci_1_5)
-    uzytkownicy_test_wymuszeni = [uzytkownik_testowy_wymuszony]
-    # pozostałe osoby z zakresu 1-5 umieszczane są w zbiorze treningowym, uid-used_id
-    uzytkownicy_trening_wymuszeni = [uid for uid in kandydaci_1_5 if uid != uzytkownik_testowy_wymuszony]
-else:
-    # jeśli w bazie nie ma osób z ID 1-5, listy zostają puste
-    uzytkownicy_test_wymuszeni = []
-    uzytkownicy_trening_wymuszeni = []
+USER_TEST = 1
 
-# reszta użytkowników z bazy, którzy nie są w zakresie id 1-5, uid-used_id
-pozostali_uzytkownicy = [uid for uid in wszyscy_uzytkownicy if uid not in kandydaci_1_5]
+# lista wszystkich użytkowników
+wszyscy_uzytkownicy = sorted(df_clean.loc[czyste_indeksy, 'user_id'].unique())
 
-# obliczanie ile osób łącznie powinno być w teście dla zachowania proporcji 80/20
-docelowa_liczba_test = max(1, int(len(wszyscy_uzytkownicy) * 0.20))
+# sprawdzenie czy istnieje
+if USER_TEST not in wszyscy_uzytkownicy:
+    raise ValueError(f"Użytkownik {USER_TEST} nie istnieje w bazie!")
 
-#sprawdzenie, ilu ludzi brakuje w teście
-brakujaca_liczba_test = max(0, docelowa_liczba_test - len(uzytkownicy_test_wymuszeni))
+# zbiór testowy zawiera wyłącznie użytkownika 1
+uzytkownicy_test = [USER_TEST]
 
-# dopełnienie zbioru testowego i treningowego pozostałymi użytkownikami
-uzytkownicy_test = uzytkownicy_test_wymuszeni + pozostali_uzytkownicy[:brakujaca_liczba_test]
-uzytkownicy_trening = uzytkownicy_trening_wymuszeni + pozostali_uzytkownicy[brakujaca_liczba_test:]
+# wszyscy pozostali trafiają do treningu
+uzytkownicy_trening = [
+    uid for uid in wszyscy_uzytkownicy
+    if uid != USER_TEST
+]
 
-logging.info(f"Użytkownicy w zbiorze TRENINGOWYM (~80%): {sorted(uzytkownicy_trening)}")
-logging.info(f"Użytkownicy w zbiorze TESTOWYM (~20%): {sorted(uzytkownicy_test)}")
+logging.info(f"Użytkownik TESTOWY: {uzytkownicy_test}")
+logging.info(f"Użytkownicy TRENINGOWI: {uzytkownicy_trening}")
 
 indeksy_trening = df_clean.loc[czyste_indeksy][df_clean.loc[czyste_indeksy, 'user_id'].isin(uzytkownicy_trening)].index
 indeksy_test = df_clean.loc[czyste_indeksy][df_clean.loc[czyste_indeksy, 'user_id'].isin(uzytkownicy_test)].index
@@ -209,7 +224,6 @@ model_xgb = xgb.XGBRegressor(
     objective='reg:squarederror',
     reg_alpha=0.5,  # regularyzacja L1 lasso
     reg_lambda=2,  # regularyzacja L2 ridge
-    early_stopping_rounds=30,  # zatrzymanie gdy model przestaje się poprawiać
 )
 
 
@@ -237,7 +251,6 @@ model_cat = CatBoostRegressor(
     subsample=0.8,
     # cat_features= cat_features_indices, cat_features_indices=[0,3] jesli mamy dane kategoryczne podajmy ich kolumny
     loss_function='RMSE',
-    early_stopping_rounds=30,
     verbose=0
 )
 
@@ -334,7 +347,7 @@ logging.info("Ensemble (XGB+LGB+CatBoost) wytrenowany.")
 
 # -------------symulacja zmiany wagi--------------
 
-def symulacja_wagi(model, dni, start_weight, kcal, bialko, spalone_kcal, cardio, silowy, kroki):
+def symulacja_wagi(model, dni, start_weight, kcal, bialko, spalone_kcal, cardio, silowy, kroki, plec):
     lista_wag = [start_weight]
     obecna_waga = start_weight
 
@@ -342,6 +355,7 @@ def symulacja_wagi(model, dni, start_weight, kcal, bialko, spalone_kcal, cardio,
 
     for d in range(1, dni + 1):
         dane_wiersza = {
+            'plec': plec,
             'zjedzone_kcal': kcal,
             'bialko_g': bialko,
             'spalone_kcal': spalone_kcal,
@@ -384,31 +398,31 @@ kalk_spalone = 2600
 kalk_cardio = 45
 kalk_silowy = 1
 kalk_kroki = 14000
+plec = 1
 
-# --- predykcja---
 
 wyniki_xgb = symulacja_wagi(model_xgb, dni_prognozy, waga_start, kalk_kcal, kalk_bialko, kalk_spalone, kalk_cardio,
-                            kalk_silowy, kalk_kroki)
+                            kalk_silowy, kalk_kroki, plec)
 wyniki_lgb = symulacja_wagi(model_lgb, dni_prognozy, waga_start, kalk_kcal, kalk_bialko, kalk_spalone, kalk_cardio,
-                            kalk_silowy, kalk_kroki)
+                            kalk_silowy, kalk_kroki, plec)
 wyniki_cat = symulacja_wagi(model_cat, dni_prognozy, waga_start, kalk_kcal, kalk_bialko, kalk_spalone, kalk_cardio,
-                            kalk_silowy, kalk_kroki)
+                            kalk_silowy, kalk_kroki, plec)
 wyniki_rf = symulacja_wagi(model_rf, dni_prognozy, waga_start, kalk_kcal, kalk_bialko, kalk_spalone, kalk_cardio,
-                           kalk_silowy, kalk_kroki)
+                           kalk_silowy, kalk_kroki, plec)
 wyniki_lr = symulacja_wagi(pipeline_lr, dni_prognozy, waga_start, kalk_kcal, kalk_bialko, kalk_spalone, kalk_cardio,
-                           kalk_silowy, kalk_kroki)
+                           kalk_silowy, kalk_kroki, plec)
 wyniki_en = symulacja_wagi(pipeline_en, dni_prognozy, waga_start, kalk_kcal, kalk_bialko, kalk_spalone, kalk_cardio,
-                           kalk_silowy, kalk_kroki)
+                           kalk_silowy, kalk_kroki, plec)
 wyniki_ridge = symulacja_wagi(pipeline_ridge, dni_prognozy, waga_start, kalk_kcal, kalk_bialko, kalk_spalone,
-                              kalk_cardio, kalk_silowy, kalk_kroki)
+                              kalk_cardio, kalk_silowy, kalk_kroki, plec)
 wyniki_svm = symulacja_wagi(pipeline_svm, dni_prognozy, waga_start, kalk_kcal, kalk_bialko, kalk_spalone, kalk_cardio,
-                            kalk_silowy, kalk_kroki)
+                            kalk_silowy, kalk_kroki, plec)
 wyniki_knn = symulacja_wagi(pipeline_knn, dni_prognozy, waga_start, kalk_kcal, kalk_bialko, kalk_spalone, kalk_cardio,
-                            kalk_silowy, kalk_kroki)
+                            kalk_silowy, kalk_kroki, plec)
 wyniki_dt = symulacja_wagi(model_dt, dni_prognozy, waga_start, kalk_kcal, kalk_bialko, kalk_spalone, kalk_cardio,
-                           kalk_silowy, kalk_kroki)
+                           kalk_silowy, kalk_kroki, plec)
 wyniki_ensemble = symulacja_wagi(model_ensemble, dni_prognozy, waga_start, kalk_kcal, kalk_bialko, kalk_spalone,
-                                 kalk_cardio, kalk_silowy, kalk_kroki)
+                                 kalk_cardio, kalk_silowy, kalk_kroki, plec)
 
 # --- porownanie --
 logging.info("------ PORÓWNANIE KOŃCOWE ------")
@@ -440,9 +454,8 @@ try:
     if len(X_test_user) > 0:
         logging.info("Generowanie wykresu dopasowania dla wszystkich 11 modeli...")
 
-        # wybor użytkownika z największą liczbą wpisów w bazie
-        najczestszy_user = df_clean['user_id'].value_counts().index[0]
-        df_user = df_clean[df_clean['user_id'] == najczestszy_user].sort_values(by='data_wpisu').copy()
+        df_user = df_clean[df_clean['user_id'] == USER_TEST].sort_values(by='data_wpisu').copy()
+        najczestszy_user = USER_TEST
 
         if len(df_user) > 1:
             X_user = df_user[kolumny_X]
@@ -450,19 +463,19 @@ try:
             waga_start_user = df_user['waga_czczo'].iloc[0]
 
             historie_wag = {
-                'Rzeczywista': [waga_start_user],
-                'XGBoost': [waga_start_user],
-                'LightGBM': [waga_start_user],
-                'CatBoost': [waga_start_user],
-                'Random Forest': [waga_start_user],
-                'Linear Regression': [waga_start_user],
-                'Elastic Net': [waga_start_user],
-                'Ridge Regression': [waga_start_user],
-                'SVM (RBF)': [waga_start_user],
-                'KNN': [waga_start_user],
-                'Decision Tree': [waga_start_user],
-                'Ensemble': [waga_start_user]
-            }
+    'Rzeczywista': df_user["waga_czczo"].tolist(),
+    'XGBoost': [waga_start_user],
+    'LightGBM': [waga_start_user],
+    'CatBoost': [waga_start_user],
+    'Random Forest': [waga_start_user],
+    'Linear Regression': [waga_start_user],
+    'Elastic Net': [waga_start_user],
+    'Ridge Regression': [waga_start_user],
+    'SVM (RBF)': [waga_start_user],
+    'KNN': [waga_start_user],
+    'Decision Tree': [waga_start_user],
+    'Ensemble': [waga_start_user]
+}
 
             # predykcje delty dla wszystkich modeli
             delty_modele = {
@@ -479,16 +492,22 @@ try:
                 'Ensemble': model_ensemble.predict(X_user)
             }
 
-            for i in range(len(df_user)):
-                # prawdziwa waga
-                historie_wag['Rzeczywista'].append(historie_wag['Rzeczywista'][-1] + delta[i])
+            for i in range(1, len(df_user)):
+    # ile dni minęło do następnego pomiaru
+                dni = df_user["dni_miedzy_wpisami"].iloc[i]
 
-                # wagi z modeli
                 for nazwa_modelu, predykcje_delty in delty_modele.items():
-                    historie_wag[nazwa_modelu].append(historie_wag[nazwa_modelu][-1] + predykcje_delty[i])
+
+        # model przewiduje zmianę DOBOWĄ,
+        # więc mnożymy przez liczbę dni między wpisami
+                    historia = historie_wag[nazwa_modelu][-1] + predykcje_delty[i] * dni
+                    historie_wag[nazwa_modelu].append(historia)
 
             # oś X
-            dni_user = list(range(0, len(historie_wag['Rzeczywista'])))
+            dni_user = (
+    df_user["data_wpisu"] -
+    df_user["data_wpisu"].iloc[0]
+).dt.days.tolist()
 
             plt.figure(figsize=(14, 8))
 
