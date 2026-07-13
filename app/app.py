@@ -1,10 +1,17 @@
 from flask import Flask, render_template, request
 from predictor import WeightPredictor
+import os
 
-app = Flask(__name__)
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+app = Flask(
+    __name__,
+    template_folder=os.path.join(BASE_DIR, "templates"),
+    static_folder=os.path.join(BASE_DIR, "static")
+)
 
 # Załadowanie modelu tylko raz przy uruchomieniu aplikacji
-predictor = WeightPredictor("models/model_ensemble.pkl")
+predictor = WeightPredictor("models/model_lightgbm.pkl")
 
 
 @app.route("/", methods=["GET", "POST"])
@@ -25,15 +32,15 @@ def home():
 
         # Wykonanie predykcji
 
-        weights = predictor.predict_weight(
+        weights = predictor.symulacja_wagi(
             start_weight=weight,
             kcal=kcal,
-            protein=protein,
-            burned=burned,
+            bialko=protein,
+            spalone_kcal=burned,
             cardio=cardio,
-            strength=strength,
-            steps=steps,
-            days=days
+            silowy=strength,
+            kroki=steps,
+            dni=days
         )
 
         # Wygenerowanie wykresu
@@ -43,7 +50,7 @@ def home():
         # Wyświetlenie wyniku
 
         return render_template(
-            "result.html",
+            "results.html",
             prediction=round(weights[-1], 2),
             weights=weights,
             days=days,
