@@ -3,71 +3,108 @@
 <head>
     <meta charset="UTF-8">
     <title>FitForm</title>
-
-    <link rel="stylesheet"
-          href="{{ url_for('static', filename='index.css') }}">
+    <link rel="stylesheet"href="{{ url_for('static', filename='style.css') }}">
 </head>
-
 <body>
-
 <div class="container">
-
     <h1>FitForm</h1>
+       <form method="POST">
 
-    <form method="POST">
+    <div class="input-group">
+        <label for="weight">Aktualna waga (kg)</label>
+        <input
+            type="number"
+            id="weight"
+            name="weight"
+            step="0.01"
+            required
+        >
+    </div>
 
-        <div class="input-group">
-            <label>Średnie tygodniowe spożycie kcal</label>
-            <input type="number" name="avg_kcal" required>
-        </div>
+    <div class="input-group">
+        <label for="kcal">Średnia liczba spożytych kalorii</label>
+        <input
+            type="number"
+            id="kcal"
+            name="kcal"
+            step="0.1"
+            required
+        >
+    </div>
 
-        <div class="input-group">
-            <label>Średnie tygodniowe spalone kcal</label>
-            <input type="number" name="avg_burned_kcal" required>
-        </div>
+    <div class="input-group">
+        <label for="protein">Średnia ilość białka (g)</label>
+        <input
+            type="number"
+            id="protein"
+            name="protein"
+            step="0.1"
+            required
+        >
+    </div>
 
-        <div class="input-group">
-            <label>Waga (kg)</label>
-            <input type="number"
-                   step="0.1"
-                   name="weight"
-                   required>
-        </div>
+    <div class="input-group">
+        <label for="burned">Średnia liczba spalonych kalorii</label>
+        <input
+            type="number"
+            id="burned"
+            name="burned"
+            step="0.1"
+            required
+        >
+    </div>
 
-        <div class="input-group">
-            <label>Ilość dni treningowych</label>
-            <input type="number"
-                   step="1"
-                   name="training_days"
-                   max="7"
-                   required>
-        </div>
+    <div class="input-group">
+        <label for="cardio">Średni czas cardio (min)</label>
+        <input
+            type="number"
+            id="cardio"
+            name="cardio"
+            step="0.1"
+            required
+        >
+    </div>
 
-        <div class="input-group">
+    <div class="input-group">
+        <label for="strength">Liczba treningów siłowych</label>
+        <input
+            type="number"
+            id="strength"
+            name="strength"
+            min="0"
+            required
+        >
+    </div>
 
-            <label>Płeć</label>
+    <div class="input-group">
+        <label for="steps">Średnia liczba kroków</label>
+        <input
+            type="number"
+            id="steps"
+            name="steps"
+            min="0"
+            required
+        >
+    </div>
 
-            <select name="gender">
+    <div class="input-group">
+        <label for="days">Liczba dni</label>
+        <input
+            type="number"
+            id="days"
+            name="days"
+            value="7"
+            min="1"
+            required
+        >
+    </div>
 
-                <option value="M">
-                    Mężczyzna
-                </option>
+    <button type="submit">
+        Oblicz prognozę
+    </button>
 
-                <option value="K">
-                    Kobieta
-                </option>
-
-            </select>
-
-        </div>
-
-        <button type="submit">
-            Generuj predykcję
-        </button>
 
     </form>
-
 </div>
-
 </body>
 </html>
