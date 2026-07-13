@@ -4,7 +4,7 @@ from predictor import WeightPredictor
 app = Flask(__name__)
 
 # Załadowanie modelu tylko raz przy uruchomieniu aplikacji
-predictor = WeightPredictor("models/model.pkl")
+predictor = WeightPredictor("models/model_ensemble.pkl")
 
 
 @app.route("/", methods=["GET", "POST"])
