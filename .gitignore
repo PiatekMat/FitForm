@@ -1,5 +1,6 @@
 # Generated data
 *.csv
+*.zip
 
 # Python
 __pycache__/
@@ -9,6 +10,8 @@ __pycache__/
 .Python
 *.egg
 *.egg-info/
+*.log
+etl/dane_uzytkownikow/
 logs/
 dist/
 build/
@@ -38,8 +41,3 @@ Thumbs.db
 .pytest_cache/
 .coverage
 htmlcov/
-<<<<<<< HEAD
-
-PC/
-=======
->>>>>>> 3c3fe2bb1e0b8034703390bfca799c2ca4cabc30
