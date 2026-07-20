@@ -462,7 +462,7 @@ def generate_training_plan(
 
                 weekly_sets[muscle_name] += exercise["sets"]
 
-        workout["day"] = DAYS[day_index]
+        workout["day"] = f"Dzień: {day_index+1}"
 
         plan.append(workout)
 
