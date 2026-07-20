@@ -1,6 +1,7 @@
 from flask import Flask, render_template, request
 from predictor import WeightPredictor
 import os
+from training.generator import generate_training_plan
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
@@ -29,32 +30,33 @@ def home():
         strength = int(request.form["strength"])
         steps = int(request.form["steps"])
         days = int(request.form["days"])
+        gender = request.form["plec"]
 
         # Wykonanie predykcji
 
         weights = predictor.symulacja_wagi(
-            start_weight=weight,
-            kcal=kcal,
-            bialko=protein,
-            spalone_kcal=burned,
-            cardio=cardio,
-            silowy=strength,
-            kroki=steps,
-            dni=days
-        )
-
-        # Wygenerowanie wykresu
-
-        predictor.save_plot(weights)
-
-        # Wyświetlenie wyniku
+        days,
+        weight,
+        kcal,
+        protein,
+        burned,
+        cardio,
+        strength,
+        steps
+        )   
+        predicted_change = weights[-1] - weights[0]
+        training_plan = generate_training_plan(
+        gender=gender,
+        predicted_weight_change=predicted_change,
+        training_days=strength
+)
 
         return render_template(
             "results.html",
-            prediction=round(weights[-1], 2),
             weights=weights,
-            days=days,
-            plot="prediction.png"
+            training_plan=training_plan,
+            start_weight=weight,
+            end_weight=weights[-1]
         )
 
     return render_template("index.html")

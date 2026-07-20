@@ -40,8 +40,99 @@
         </tbody>
     </table>
     <br>
-    <img src="{{ url_for('static', filename=plot) }}"
-         alt="Wykres">
+    <h1>Wynik prognozy</h1>
+
+<p>Waga początkowa: {{ start_weight }} kg</p>
+<p>Waga po {{ weights|length - 1 }} dniach: {{ end_weight }} kg</p>
+
+<canvas id="weightChart"></canvas>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+const weights = {{ weights|tojson }};
+
+const labels = weights.map((_, index) => index);
+
+new Chart(document.getElementById("weightChart"), {
+    type: "line",
+    data: {
+        labels: labels,
+        datasets: [{
+            label: "Prognozowana waga",
+            data: weights,
+            borderWidth: 3,
+            fill: false,
+            tension: 0.25
+        }]
+    },
+    options: {
+        responsive: true,
+        scales: {
+            x: {
+                title: {
+                    display: true,
+                    text: "Dzień"
+                }
+            },
+            y: {
+                title: {
+                    display: true,
+                    text: "Waga [kg]"
+                }
+            }
+        }
+    }
+});
+</script>
+
+<h2>Cel: {{ training_plan.goal|capitalize }}</h2>
+
+{% for workout in training_plan.plan %}
+
+<h2>{{ workout.day }}</h2>
+
+<h3>{{ workout.split }}</h3>
+
+{% for muscle in workout.muscles %}
+
+<h4>{{ muscle.muscle }}</h4>
+
+<table>
+
+<tr>
+
+<th>Ćwiczenie</th>
+
+<th>Serie</th>
+
+<th>Powtórzenia</th>
+
+<th>Przerwa</th>
+
+</tr>
+
+{% for exercise in muscle.exercises %}
+
+<tr>
+
+<td>{{ exercise.name }}</td>
+
+<td>{{ exercise.sets }}</td>
+
+<td>{{ exercise.reps }}</td>
+
+<td>{{ exercise.rest }}</td>
+
+</tr>
+
+{% endfor %}
+
+</table>
+
+{% endfor %}
+
+{% endfor %}
 
     <br><br>
     <a href="/">
